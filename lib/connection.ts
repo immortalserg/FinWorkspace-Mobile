@@ -1,5 +1,5 @@
 import * as Network from 'expo-network'
-import type { ServerSettings } from './config'
+import { assertSafeServerUrl, type ServerSettings } from './config'
 
 /** SSID discovery is not implemented yet. Never trust a Wi-Fi network by guessing. */
 async function currentSsid(): Promise<string | null> {
@@ -19,6 +19,8 @@ async function reachable(baseUrl: string): Promise<boolean> {
 }
 
 export async function selectServer(config: ServerSettings): Promise<string> {
+  if (config.localUrl) assertSafeServerUrl(config.localUrl)
+  if (config.remoteUrl && !config.remoteUrl.startsWith('https:')) throw new Error('Remote address must use HTTPS')
   if (config.connectionMode === 'local') {
     if (!config.localUrl) throw new Error('Configure a local server address')
     return config.localUrl
