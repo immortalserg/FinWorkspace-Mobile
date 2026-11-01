@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFocusEffect, router } from 'expo-router'
-import { ActivityIndicator, BackHandler, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, BackHandler, PanResponder, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 import { apiGet, createMobileWebSession, signIn } from '../lib/api'
 import { loadServerSettings } from '../lib/config'
@@ -11,9 +11,7 @@ type CurrentUser = { email: string; full_name: string | null }
 
 export default function Home() {
   const webview = useRef<WebView>(null)
-  const [base, setBase] = useState('')
   const [entry, setEntry] = useState('')
-  const [user, setUser] = useState<CurrentUser | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(true)
@@ -24,7 +22,6 @@ export default function Home() {
     const code = await createMobileWebSession()
     const settings = await loadServerSettings()
     const server = await selectServer(settings)
-    setBase(server)
     setEntry(`${server}/mobile-auth#code=${encodeURIComponent(code)}`)
   }, [])
 
@@ -40,17 +37,25 @@ export default function Home() {
       }
       const tokens = await getTokens()
       if (tokens) {
-        const me = await apiGet<CurrentUser>('/auth/me')
+        await apiGet<CurrentUser>('/auth/me')
         if (!active) return
-        setUser(me)
         await openWeb()
       } else if (active) {
-        setUser(null); setEntry('')
+        setEntry('')
       }
-    })().catch(e => { if (active) { setUser(null); setEntry(''); setError(e instanceof Error ? e.message : 'Connection failed') } })
+    })().catch(e => { if (active) { setEntry(''); setError(e instanceof Error ? e.message : 'Connection failed') } })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [openWeb]))
+
+  // Only the narrow left edge captures gestures; the rest belongs to the web UI.
+  const edgeSwipe = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) =>
+      gesture.dx > 35 && Math.abs(gesture.dy) < 45,
+    onPanResponderRelease: (_, gesture) => {
+      if (gesture.dx > 85 && Math.abs(gesture.dy) < 90) router.push('/settings')
+    },
+  })).current
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -64,7 +69,7 @@ export default function Home() {
     setLoading(true); setError('')
     try {
       await signIn(email, password)
-      setUser(await apiGet<CurrentUser>('/auth/me'))
+      await apiGet<CurrentUser>('/auth/me')
       await openWeb()
       setPassword('')
     } catch (e) { setError(e instanceof Error ? e.message : 'Login failed') }
@@ -73,7 +78,7 @@ export default function Home() {
 
   async function logout() {
     await clearTokens()
-    setUser(null); setEntry(''); setCanGoBack(false)
+    setEntry(''); setCanGoBack(false)
   }
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>
@@ -102,13 +107,15 @@ export default function Home() {
       startInLoadingState
       renderLoading={() => <View style={styles.center}><ActivityIndicator size="large" /></View>}
       onNavigationStateChange={state => setCanGoBack(state.canGoBack)}
+      onMessage={event => {
+        try {
+          const message = JSON.parse(event.nativeEvent.data) as { type?: string }
+          if (message.type === 'FINWORKSPACE_LOGOUT') void logout()
+        } catch { /* Ignore unrelated messages */ }
+      }}
       onError={event => setError(event.nativeEvent.description || 'Cannot load server')}
     />
-    <View style={styles.toolbar}>
-      <Pressable onPress={() => router.push('/settings')}><Text style={styles.toolText}>Settings</Text></Pressable>
-      <Text numberOfLines={1} style={styles.address}>{user?.full_name || user?.email || base}</Text>
-      <Pressable onPress={() => void logout()}><Text style={styles.toolText}>Sign out</Text></Pressable>
-    </View>
+    <View style={styles.edgeGesture} {...edgeSwipe.panHandlers} />
     {error ? <Text style={styles.error}>{error}</Text> : null}
   </View>
 }
@@ -123,7 +130,5 @@ const styles = StyleSheet.create({
   secondary: { alignItems: 'center', marginTop: 22 },
   link: { color: '#145b94' },
   error: { color: '#b91c1c', marginTop: 14 },
-  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#102d4b', gap: 12 },
-  toolText: { color: '#fff', fontWeight: '700' },
-  address: { color: '#cbd5e1', flex: 1, textAlign: 'center' },
+  edgeGesture: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 18, backgroundColor: 'transparent' },
 })
