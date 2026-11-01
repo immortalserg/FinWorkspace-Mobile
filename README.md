@@ -1,52 +1,39 @@
 # FinWorkspace Mobile
 
-Native Android/iOS client foundation built with Expo and React Native.
+Android/iOS Expo shell that displays the **server-hosted FinWorkspace web application** using React Native WebView. UI updates are deployed on the FinWorkspace server without rebuilding the APK.
 
-## Features implemented in this foundation
+## Implemented
 
-- Configurable remote HTTPS server and local server URLs.
-- Multiple trusted Wi-Fi SSIDs with automatic local/remote selection.
-- **Reachability checks** before switching to a local endpoint.
-- Email/password login using the existing FinWorkspace backend.
-- Refresh-token persistence using Expo SecureStore (never AsyncStorage).
-- API client with authenticated requests and automatic refresh.
-- Mobile-friendly login, dashboard and server settings.
+- Full server-hosted web interface, including the existing browser login.
+- Manual local HTTP/HTTPS or remote HTTPS server selection.
+- Local-only operation without requiring a remote server.
+- WebView navigation/back handling, reload control and settings.
+- WebView DOM storage and cookies.
 
-## Setup
+## Not yet implemented
+
+- Native SSID detection / automatic trusted Wi-Fi switching (auto uses local only when no remote URL is configured).
+- Native push notifications.
+- Android file picker, download manager, camera permissions and external URL handling require device testing and follow-up implementation.
+- Offline mode.
+
+## Local Android build
 
 ```sh
-cd mobile
 npm install
-npx expo start
+npx expo install --check
+npx tsc --noEmit
+npx expo prebuild --platform android
+cd android
+./gradlew assembleDebug
 ```
 
-Open with an Expo development build to use Wi-Fi SSID detection. An Expo Go environment may not expose the native capabilities used by this app.
+APK: `android/app/build/outputs/apk/debug/app-debug.apk`. A debug build normally requires Metro (`npx expo start --dev-client --host lan`). For standalone distribution, configure release signing and build a release APK.
 
-## Wi-Fi access permissions
+The Android manifest enables cleartext HTTP for LAN servers. **Only use HTTP on a trusted LAN**: credentials and session data are not encrypted. Use HTTPS for remote access, preferably HTTPS on the LAN as well.
 
-- Android: connected SSID requires Location permission, the device's Location services enabled, and OS Wi-Fi access permissions. Android builds need to configure the appropriate permissions.
-- iOS: reading the connected SSID is restricted by Apple. The app requests the necessary permission and uses the appropriate Wi-Fi entitlement; support depends on signing and device configuration. If inaccessible, it defaults to the remote server.
+## Architecture
 
-**An SSID alone is not trusted authentication**; it is only a hint for route selection. A local endpoint must answer the expected health endpoint. Always use HTTPS over untrusted networks and never expose credentials to an arbitrary endpoint. For production prefer an HTTPS local domain (split-horizon DNS) rather than a plain HTTP LAN IP.
+The native shell does not handle the web application's credentials or inject authentication tokens. Login and browser session management are handled by the FinWorkspace web application inside WebView. WebView cookies are independent from Chrome cookies. Switching between different origins can require signing in again.
 
-## Authentication
-
-FinWorkspace already implements access and refresh JWTs. The mobile client keeps both in SecureStore and refreshes them on demand. A production follow-up should implement rotating, server-side revocable per-device refresh sessions rather than using the existing stateless refresh JWTs. In particular the backend's current `/auth/logout` does not revoke tokens server-side.
-
-## Push notifications
-
-Existing FinWorkspace push uses browser Web Push subscriptions with VAPID. Native Android/iOS notifications require a **separate delivery adapter**, with per-device registration, authenticated token upsert/revoke endpoints, and FCM/APNs (or Expo's push gateway). This foundation intentionally **does not claim push delivery works yet**. Never include sensitive account amounts in lock-screen notifications by default. Make delivery opt-in and user-specific.
-
-## Next steps
-
-1. Add native device registration and server-side dispatch through FCM/APNs/Expo.
-2. Register native notification tokens after user consent; refresh and unregister on logout.
-3. Add deep links, notification preferences, and device management.
-4. Add biometric unlock and server-side device session revocation.
-5. Test physical Android and iOS devices with different SSIDs and VPN configurations.
-
-## Build status (initial foundation)
-
-- Expo SDK 54: pin `react-native` to `0.81.5` and `react-dom` to `19.1.0` to avoid npm peer conflicts.
-- SSID detection is **not implemented**: Expo Network does not expose the SSID. The connection selector deliberately falls back to the remote HTTPS server. A native Wi-Fi module and platform permissions are required before automatic switching can work.
-- This foundation is not yet a functional full-featured mobile client; native push and finance screens are pending.
+Native push notifications require device registration and a server-side delivery adapter; browser Web Push does not automatically become native push.
