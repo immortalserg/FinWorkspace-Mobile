@@ -4,11 +4,11 @@ Android/iOS Expo shell that displays the **server-hosted FinWorkspace web applic
 
 ## Implemented
 
-- Full server-hosted web interface, including the existing browser login.
+- Native API login with access/refresh tokens stored in SecureStore; server-hosted web interface after one-time WebView session exchange.
 - Manual local HTTP/HTTPS or remote HTTPS server selection.
 - Local-only operation without requiring a remote server.
 - WebView navigation/back handling, reload control and settings.
-- WebView DOM storage and cookies.
+- WebView DOM storage in incognito mode, with a separate one-time web session on each opening.
 
 ## Not yet implemented
 
@@ -34,6 +34,6 @@ The Android manifest enables cleartext HTTP for LAN servers. **Only use HTTP on 
 
 ## Architecture
 
-The native shell does not handle the web application's credentials or inject authentication tokens. Login and browser session management are handled by the FinWorkspace web application inside WebView. WebView cookies are independent from Chrome cookies. Switching between different origins can require signing in again.
+The native shell authenticates through /api/auth/login and keeps JWTs in SecureStore. It requests a 60-second single-use code from /api/auth/mobile-web-session. The WebView opens /mobile-auth with the one-time code in the URL fragment (never the JWT), and the web frontend redeems it via POST /api/auth/mobile-web-session/exchange, storing its own web session. Both backend and frontend must be updated before this mobile build will work. The URL fragment is removed immediately on page load. Do not use this flow over untrusted HTTP: prefer HTTPS even on LAN.
 
 Native push notifications require device registration and a server-side delivery adapter; browser Web Push does not automatically become native push.
