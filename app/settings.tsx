@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { router } from 'expo-router'
-import * as Location from 'expo-location'
 import { Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native'
 import { loadServerSettings, saveServerSettings, type ConnectionMode } from '../lib/config'
-import { clearTokens } from '../lib/session'
 
 export default function Settings() {
   const [remote, setRemote] = useState('')
@@ -23,16 +21,6 @@ export default function Settings() {
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Invalid configuration') }
   }
 
-  async function allowWifi() {
-    const result = await Location.requestForegroundPermissionsAsync()
-    setMessage(result.granted ? 'Permission granted. SSID detection may still require OS configuration.' : 'Permission denied; remote address will be used.')
-  }
-
-  async function logout() {
-    await clearTokens()
-    router.replace('/')
-  }
-
   return <ScrollView style={styles.page} contentContainerStyle={styles.content}>
     <Text style={styles.heading}>Server connection</Text>
     <Text style={styles.label}>Connection mode</Text>
@@ -44,9 +32,9 @@ export default function Settings() {
     <Text style={styles.label}>Trusted Wi-Fi names (one SSID per line)</Text>
     <TextInput style={[styles.input, styles.multiline]} multiline value={ssids} onChangeText={setSsids} placeholder={'Home WiFi\nHome WiFi 5G'} />
     <Text style={styles.note}>Automatic mode uses the local server if no remote address is configured. Otherwise it uses the remote HTTPS server until native SSID detection is implemented. Select Local server to force local access. HTTP sends credentials unencrypted: use only on a trusted LAN.</Text>
-    <Pressable style={styles.button} onPress={() => void allowWifi()}><Text style={styles.buttonText}>Allow Wi-Fi detection</Text></Pressable>
+
     <Pressable style={styles.button} onPress={() => void save()}><Text style={styles.buttonText}>Save settings</Text></Pressable>
-    <Pressable style={styles.logout} onPress={() => void logout()}><Text style={styles.buttonText}>Sign out</Text></Pressable>
+    <Pressable style={styles.button} onPress={() => router.replace('/')}><Text style={styles.buttonText}>Open FinWorkspace</Text></Pressable>
     {message ? <Text style={styles.message}>{message}</Text> : null}
   </ScrollView>
 }
