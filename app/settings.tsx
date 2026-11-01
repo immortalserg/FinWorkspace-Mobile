@@ -17,7 +17,7 @@ export default function Settings() {
   async function save() {
     try {
       await saveServerSettings({ remoteUrl: remote, localUrl: local, trustedSsids: ssids.split(/[,\n]/), connectionMode: mode })
-      setMessage(`Saved. Connection mode: ${mode}`)
+      router.replace('/')
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Invalid configuration') }
   }
 
