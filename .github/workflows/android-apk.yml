@@ -30,7 +30,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      # The ubuntu runner already includes Android SDK. Avoid sdkmanager setup failures.
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Generate FinWorkspace icons
