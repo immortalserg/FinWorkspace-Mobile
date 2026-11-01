@@ -33,6 +33,13 @@ jobs:
       - uses: android-actions/setup-android@v3
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Generate FinWorkspace icons
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin
+          mkdir -p assets
+          rsvg-convert -w 1024 -h 1024 assets/finworkspace.svg > assets/icon.png
+          rsvg-convert -w 1024 -h 1024 assets/finworkspace.svg > assets/adaptive-icon.png
       - name: TypeScript check
         run: npx tsc --noEmit
       - name: Generate Android project
