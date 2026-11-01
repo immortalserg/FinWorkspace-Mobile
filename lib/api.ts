@@ -6,7 +6,6 @@ let pendingRefresh: Promise<Tokens> | undefined
 
 async function endpoint(): Promise<string> {
   const config = await loadServerSettings()
-  if (!config.remoteUrl) throw new Error('Configure your server in Settings')
   return selectServer(config)
 }
 
