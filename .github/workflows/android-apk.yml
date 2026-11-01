@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    tags: ['v*']
     paths:
       - 'app/**'
       - 'lib/**'
@@ -16,7 +17,7 @@ on:
       - '.github/workflows/android-apk.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   android:
@@ -60,3 +61,14 @@ jobs:
           name: finworkspace-mobile-release-apk
           path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+
+      - name: Publish GitHub prerelease
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" android/app/build/outputs/apk/release/*.apk \\
+            --title "FinWorkspace Mobile ${GITHUB_REF_NAME}" \\
+            --notes "Android test release. Google Play signed AAB distribution is not configured yet.\\n\\nChanges: local HTTP restricted to private network IPs, persistent Expo Android manifest configuration, and working native sign-in." \\
+            --prerelease \\
+            --verify-tag
