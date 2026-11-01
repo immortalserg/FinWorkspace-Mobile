@@ -1,18 +1,15 @@
-import * as Location from 'expo-location'
 import * as Network from 'expo-network'
 import type { ServerSettings } from './config'
 
+/**
+ * Expo Network reports Wi-Fi connectivity but does not expose the SSID.
+ * Until a native SSID module is configured, never assume the network is
+ * trusted; keep authenticated traffic on the configured HTTPS remote URL.
+ */
 async function currentSsid(): Promise<string | null> {
-  try {
-    const state = await Network.getNetworkStateAsync()
-    if (!state.isConnected || state.type !== Network.NetworkStateType.WIFI) return null
-    const permission = await Location.getForegroundPermissionsAsync()
-    if (!permission.granted) return null
-    const ssid = await Network.getCurrentWifiSSIDAsync()
-    return ssid || null
-  } catch {
-    return null
-  }
+  const state = await Network.getNetworkStateAsync()
+  if (!state.isConnected || state.type !== Network.NetworkStateType.WIFI) return null
+  return null
 }
 
 async function reachable(baseUrl: string): Promise<boolean> {
@@ -28,10 +25,6 @@ async function reachable(baseUrl: string): Promise<boolean> {
   }
 }
 
-/**
- * Prefer local only when connected to a configured SSID AND the server is
- * reachable. SSID is never treated as proof of identity.
- */
 export async function selectServer(config: ServerSettings): Promise<string> {
   if (config.localUrl && config.trustedSsids.length) {
     const ssid = await currentSsid()

@@ -44,3 +44,9 @@ Existing FinWorkspace push uses browser Web Push subscriptions with VAPID. Nativ
 3. Add deep links, notification preferences, and device management.
 4. Add biometric unlock and server-side device session revocation.
 5. Test physical Android and iOS devices with different SSIDs and VPN configurations.
+
+## Build status (initial foundation)
+
+- Expo SDK 54: pin `react-native` to `0.81.5` and `react-dom` to `19.1.0` to avoid npm peer conflicts.
+- SSID detection is **not implemented**: Expo Network does not expose the SSID. The connection selector deliberately falls back to the remote HTTPS server. A native Wi-Fi module and platform permissions are required before automatic switching can work.
+- This foundation is not yet a functional full-featured mobile client; native push and finance screens are pending.
