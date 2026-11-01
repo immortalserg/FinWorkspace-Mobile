@@ -44,6 +44,12 @@ jobs:
         run: npx tsc --noEmit
       - name: Generate Android project
         run: npx expo prebuild --platform android --non-interactive
+      - name: Verify Android cleartext policy
+        run: |
+          echo "=== Merged manifest network configuration ==="
+          grep -R -n -E 'usesCleartextTraffic|networkSecurityConfig' android/app/src/main/AndroidManifest.xml android/app/src/main/res/xml 2>/dev/null || true
+          echo "=== Android manifest ==="
+          sed -n '1,100p' android/app/src/main/AndroidManifest.xml
       - name: Build standalone release APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
