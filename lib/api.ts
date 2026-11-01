@@ -51,3 +51,21 @@ export async function apiGet<T>(path: string): Promise<T> {
   if (!response.ok) throw new Error(`Request failed (${response.status})`)
   return await response.json() as T
 }
+
+export async function createMobileWebSession(): Promise<string> {
+  const tokens = await getTokens()
+  if (!tokens) throw new Error('Please sign in')
+  const base = await endpoint()
+  let response = await fetch(`${base}/api/auth/mobile-web-session`, {
+    method: 'POST', headers: { Authorization: `Bearer ${tokens.access_token}` },
+  })
+  if (response.status === 401) {
+    const refreshed = await renew()
+    response = await fetch(`${base}/api/auth/mobile-web-session`, {
+      method: 'POST', headers: { Authorization: `Bearer ${refreshed.access_token}` },
+    })
+  }
+  if (!response.ok) throw new Error(`Mobile session request failed (${response.status})`)
+  const data = await response.json() as { code: string }
+  return data.code
+}
