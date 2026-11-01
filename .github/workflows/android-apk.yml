@@ -67,8 +67,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" android/app/build/outputs/apk/release/*.apk \\
-            --title "FinWorkspace Mobile ${GITHUB_REF_NAME}" \\
-            --notes "Android test release. Google Play signed AAB distribution is not configured yet.\\n\\nChanges: local HTTP restricted to private network IPs, persistent Expo Android manifest configuration, and working native sign-in." \\
-            --prerelease \\
+          gh release create "${GITHUB_REF_NAME}" android/app/build/outputs/apk/release/*.apk \
+            --title "FinWorkspace Mobile ${GITHUB_REF_NAME}" \
+            --notes "Android test release. Google Play signed AAB distribution is not configured yet." \
+            --prerelease \
             --verify-tag
