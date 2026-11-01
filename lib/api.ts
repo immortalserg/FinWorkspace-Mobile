@@ -11,11 +11,18 @@ async function endpoint(): Promise<string> {
 
 export async function signIn(email: string, password: string): Promise<void> {
   const base = await endpoint()
-  const response = await fetch(`${base}/api/auth/login`, {
+  let response: Response
+  try {
+    response = await fetch(`${base}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
-  })
+    })
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
+    console.error(`[FinWorkspace] Login transport failed: ${base}/api/auth/login: ${reason}`)
+    throw new Error(`Cannot connect to ${base}/api/auth/login (${reason}). Check Android HTTP permissions and network access.`)
+  }
   if (!response.ok) throw new Error(response.status === 401 ? 'Incorrect email or password' : `Login failed (${response.status})`)
   await setTokens(await response.json() as Tokens)
 }
