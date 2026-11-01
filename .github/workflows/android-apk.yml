@@ -7,6 +7,7 @@ on:
     paths:
       - 'app/**'
       - 'lib/**'
+      - 'plugins/**'
       - 'assets/**'
       - 'app.json'
       - 'package.json'
@@ -44,24 +45,10 @@ jobs:
         run: npx tsc --noEmit
       - name: Generate Android project
         run: npx expo prebuild --platform android --non-interactive
-      - name: Enable HTTP for local Home Assistant servers
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("android/app/src/main/AndroidManifest.xml")
-          manifest = p.read_text()
-          if 'android:usesCleartextTraffic=' not in manifest:
-              manifest = manifest.replace('<application ', '<application android:usesCleartextTraffic="true" ', 1)
-          else:
-              import re
-              manifest = re.sub(r'android:usesCleartextTraffic="[^"]*"', 'android:usesCleartextTraffic="true"', manifest, count=1)
-          assert 'android:usesCleartextTraffic="true"' in manifest
-          p.write_text(manifest)
-          PY
       - name: Verify Android cleartext policy
         run: |
           echo "=== Merged manifest network configuration ==="
-          grep -R -n -E 'usesCleartextTraffic|networkSecurityConfig' android/app/src/main/AndroidManifest.xml android/app/src/main/res/xml 2>/dev/null || true
+          grep -n 'android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
           echo "=== Android manifest ==="
           sed -n '1,100p' android/app/src/main/AndroidManifest.xml
       - name: Build standalone release APK
