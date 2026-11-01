@@ -13,13 +13,13 @@ export default function Settings() {
   const [message, setMessage] = useState('')
 
   useEffect(() => { void loadServerSettings().then(s => {
-    setRemote(s.remoteUrl); setLocal(s.localUrl); setSsids(s.trustedSsids.join('\n'))
+    setRemote(s.remoteUrl); setLocal(s.localUrl); setSsids(s.trustedSsids.join('\n')); setMode(s.connectionMode)
   }) }, [])
 
   async function save() {
     try {
-      await saveServerSettings({ remoteUrl: remote, localUrl: local, trustedSsids: ssids.split(/[,\n]/) })
-      setMessage('Saved. Connection mode: ${mode}')
+      await saveServerSettings({ remoteUrl: remote, localUrl: local, trustedSsids: ssids.split(/[,\n]/), connectionMode: mode })
+      setMessage(`Saved. Connection mode: ${mode}`)
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Invalid configuration') }
   }
 
