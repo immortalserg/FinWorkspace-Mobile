@@ -94,6 +94,7 @@ export default function Home() {
       source={{ uri: entry }}
       javaScriptEnabled
       domStorageEnabled
+      incognito
       sharedCookiesEnabled
       thirdPartyCookiesEnabled={false}
       mixedContentMode="never"
